@@ -1,0 +1,18 @@
+{
+  "name": "qgame",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node --max-old-space-size=2048 app.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.18.2",
+    "express-session": "^1.18.0",
+    "socket.io": "^4.8.1"
+  }
+}
