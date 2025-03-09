@@ -1,5 +1,4 @@
-# Real-Time Quiz Game
-
+# Real-Time Quiz Game (Server side only).
 
 This is a real-time quiz game where:
 
@@ -16,8 +15,11 @@ Winners are announced automatically for their winning.
 
 # How Winners Are Determined
 1️⃣ Users submit answers before the time runs out.
+
 2️⃣ The highest score wins.
+
 3️⃣ If multiple users have the same score, they all win.
+
 4️⃣ Winners receive a WebSocket notification in real-time.
 
 # How to install
@@ -44,9 +46,11 @@ Endpoint: /submitanswer
 
 Description: Submits an answer for the current question.
 
-> **Note:** The current implementation is not designed for scalability and does not take into account the challenges of handling high concurrency or distributed environments. As it stands, the system relies on in-memory storage (winnersMap), processes winners synchronously, and operates as a single-instance WebSocket server, which limits its ability to scale efficiently. To support a large number of concurrent users (e.g., 100,000+), significant architectural improvements are needed, including distributed WebSocket handling, database optimizations, caching mechanisms, and asynchronous processing.
 
 # How to Scale the Real-Time Quiz Game?
+
+> **Note:** The current implementation is not designed for scalability and does not take into account the challenges of handling high concurrency or distributed environments. As it stands, the system relies on in-memory storage (winnersMap), processes winners synchronously, and operates as a single-instance WebSocket server, which limits its ability to scale efficiently. To support a large number of concurrent users (e.g., 100,000+), significant architectural improvements are needed, including distributed WebSocket handling, database optimizations, caching mechanisms, and asynchronous processing.
+
 
 ## Scale WebSocket Connections (Multiple Servers)
 
@@ -56,6 +60,7 @@ Solution: Use Redis Pub/Sub with multiple WebSocket servers
 - Redis Pub/Sub helps synchronize messages across multiple servers.
 
 This allows WebSockets to scale horizontally across multiple instances.
+
 Ensures winners get notified regardless of which server they are connected to.
 
 ## Load Balancing & Multi-Core Utilization
@@ -75,6 +80,7 @@ Problem: The current implementation stores winners & questions in memory, meanin
 Solution: Use MongoDB for storage & Redis for caching
 
 MongoDB stores questions & winners persistently.
+
 Redis caches active questions for fast reads.
 
 This ensures persistence even if the server crashes and scales efficiently across multiple servers.
@@ -96,6 +102,7 @@ Store the current question in Redis instead of fetching from MongoDB every time.
 Problem: sendWinners() runs inside the WebSocket server, which:
 
 Blocks real-time communication while processing winners.
+
 Slows down the server when many users win at the same time.
 
 Solution: Move winner processing to a background worker (RabbitMQ/Kafka).
