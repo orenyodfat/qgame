@@ -20,10 +20,27 @@ Winners are announced automatically for their winning.
 3️⃣ If multiple users have the same score, they all win.
 4️⃣ Winners receive a WebSocket notification in real-time.
 
-# How to install
-```npm install```
-# start the game server
+# How to install 
+
+## server 
+```cd backend```
+
+```yarn install```
+
+start the server:
+
 ```node app.js```
+
+## frontend 
+
+```cd frontend```
+
+```yarn install```
+
+start the react app on your local machine:
+
+```yarn dev```
+
 
 # API Endpoints for the Real-Time Quiz Game
 ## Get the Current Question
@@ -44,9 +61,33 @@ Endpoint: /submitanswer
 
 Description: Submits an answer for the current question.
 
-> **Note:** The current implementation is not designed for scalability and does not take into account the challenges of handling high concurrency or distributed environments. As it stands, the system relies on in-memory storage (winnersMap), processes winners synchronously, and operates as a single-instance WebSocket server, which limits its ability to scale efficiently. To support a large number of concurrent users (e.g., 100,000+), significant architectural improvements are needed, including distributed WebSocket handling, database optimizations, caching mechanisms, and asynchronous processing.
+## WebSocket Events
+### Register User
+
+Event Name: register
+
+Direction: Client ➡️ Server
+
+Description: Registers a user with their unique identifier (UID) to establish a private communication channel.
+
+Example: ```socket.emit('register', 'user123');```
+
+### Question Update
+
+Event Name: questionUpdate
+
+Direction: Server ➡️ All Clients
+
+Description: Emitted when a new quiz question becomes active. Clients should update their interface accordingly.
+
+Example: ```socket.on('questionUpdate', (question) => {
+    console.log(question.id, question.text);
+});```
 
 # How to Scale the Real-Time Quiz Game?
+
+> **Note:** The current implementation is not designed for scalability and does not take into account the challenges of handling high concurrency or distributed environments. As it stands, the system relies on in-memory storage (winnersMap), processes winners synchronously, and operates as a single-instance WebSocket server, which limits its ability to scale efficiently. To support a large number of concurrent users (e.g., 100,000+), significant architectural improvements are needed, including distributed WebSocket handling, database optimizations, caching mechanisms, and asynchronous processing.
+
 
 ## Scale WebSocket Connections (Multiple Servers)
 
@@ -98,10 +139,12 @@ Store the current question in Redis instead of fetching from MongoDB every time.
 ## Use a Background Worker for Winner Processing
 Problem: sendWinners() runs inside the WebSocket server, which:
 
-Blocks real-time communication while processing winners.
-Slows down the server when many users win at the same time.
+- Blocks real-time communication while processing winners.
+  
+- Slows down the server when many users win at the same time.
 
 Solution: Move winner processing to a background worker (RabbitMQ/Kafka).
+
 Idea: Move heavy or potentially time-consuming tasks to a separate process:
 
 Main Server (WebSocket/Express):
@@ -116,4 +159,5 @@ Listens to the queue.
 Processes the message (e.g., loops over winners, calculates scores, sends winner notifications).
 Emits WebSocket updates (if needed, it might connect to the same Redis or Socket.io server).
 The main server remains free to handle incoming traffic.
+
 Result: The main Node.js process never blocks on intense winner processing.
