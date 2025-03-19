@@ -71,11 +71,14 @@ Solution: Use PM2 & Nginx Load Balancer
 Problem: The current implementation stores winners & questions in memory, meaning:
 - Data is lost when the server restarts.
 - It doesn’t scale beyond one machine.
+- Might lead to overruns due to concurrent writes (in some edge cases)
 
 Solution: Use MongoDB for storage & Redis for caching
 
 MongoDB stores questions & winners persistently.
 Redis caches active questions for fast reads.
+A database (or Redis) provides a single source of truth accessible to all processes.
+Ensures consistency: The question and winners are the same across every instance.
 
 This ensures persistence even if the server crashes and scales efficiently across multiple servers.
 
@@ -99,3 +102,18 @@ Blocks real-time communication while processing winners.
 Slows down the server when many users win at the same time.
 
 Solution: Move winner processing to a background worker (RabbitMQ/Kafka).
+Idea: Move heavy or potentially time-consuming tasks to a separate process:
+
+Main Server (WebSocket/Express):
+
+- Receives new data (e.g., question expiry).
+- Enqueues a message { winnersMapSlice, qid } to RabbitMQ (or Kafka, SQS, etc.).
+- Immediately returns, staying responsive to other requests.
+
+Worker Process:
+
+Listens to the queue.
+Processes the message (e.g., loops over winners, calculates scores, sends winner notifications).
+Emits WebSocket updates (if needed, it might connect to the same Redis or Socket.io server).
+The main server remains free to handle incoming traffic.
+Result: The main Node.js process never blocks on intense winner processing.
